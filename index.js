@@ -5,7 +5,7 @@ const SLACK_WEBHOOK_URL = ''; // Enter Your Slack Webhook URL here
 const webhook = new IncomingWebhook(SLACK_WEBHOOK_URL);
 
 // subscribe is the main function called by Cloud Functions.
-module.exports.subscribe = (event, callback) => {
+module.exports.subscribe = (event, context, callback) => {
   const build = eventToBuild(event.data);
 
   // Skip if the current status is not in the status list.
@@ -22,7 +22,10 @@ module.exports.subscribe = (event, callback) => {
   ];
 
   if (status.indexOf(build.status) === -1) {
-    return callback();
+    if (typeof callback === 'function') {
+      return callback();
+    }
+    return;
   }
 
   // Send message to Slack.
@@ -43,7 +46,7 @@ const createSlackMessage = (build) => {
   let buildId = build.id || '';
   let buildCommit = build.substitutions.COMMIT_SHA || '';
   let branch = build.substitutions.BRANCH_NAME || '';
-  let repoName = build.source.repoSource.repoName.split('_').pop() || ''; //Get repository name
+  let repoName = build.substitutions.REPO_NAME.split('_').pop() || ''; //Get repository name
 
   let message = {
     text: `Build - \`${buildId}\``,
